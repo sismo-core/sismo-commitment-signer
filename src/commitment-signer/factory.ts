@@ -1,10 +1,10 @@
 import { CommitmentSigner } from ".";
-import { CommitmentSignerExample } from "./commitment-signer-example";
 import { getCommitmentStore } from "../commitment-store";
 import { getSecretHandler } from "../secret-manager";
+import { CommitmentSignerSynaps } from "./commitment-signer-synaps";
 
 export const commitmentSignerFactory = async (): Promise<CommitmentSigner> => {
-  return new CommitmentSignerExample(
+  return new CommitmentSignerSynaps(
     getCommitmentStore("example"),
     getSecretHandler()
   );
