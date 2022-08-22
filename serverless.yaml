@@ -1,0 +1,65 @@
+service: sismo-commitment-signer
+frameworkVersion: "3"
+
+custom:
+  profiles:
+    dev: staging-common
+    # prod: prod-commitment-signer
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  profile: ${self:custom.profiles.${sls:stage}}
+  region: eu-west-1
+  memorySize: 2048
+  timeout: 20 # optional, in seconds, default is 6
+  environment:
+    COMMITMENT_STORE_TABLE_SUFFIX: ${sls:stage}CommitmentStore
+  httpApi:
+    cors: true
+
+functions:
+  commit:
+    handler: src/handler.commit
+    provisionedConcurrency: 2
+    disableLogs: true
+    events:
+      - httpApi:
+          path: /commit
+          method: POST
+
+  getSignedCommit:
+    handler: src/handler.getSignedCommitment
+    provisionedConcurrency: 2
+    disableLogs: true
+    events:
+      - httpApi:
+          path: /get-signed-commitment
+          method: GET
+
+  getPublicKey:
+    handler: src/handler.getPublicKey
+    disableLogs: true
+    events:
+      - httpApi:
+          path: /get-public-key
+          method: GET
+
+  generateSecret:
+    handler: src/handler.generateSecret
+
+plugins:
+  - serverless-plugin-typescript
+
+resources:
+  Resources:
+    vault:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        TableName: ${sls:stage}CommitmentStore
+        AttributeDefinitions: ${file(./src/commitment-store/schema.db.json):AttributeDefinitions}
+        KeySchema: ${file(./src/commitment-store/schema.db.json):KeySchema}
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
