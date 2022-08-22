@@ -1,0 +1,9 @@
+.build
+coverage/
+node_modules/
+.terraform/
+.serverless
+.tmp
+cache
+types
+.env*
