@@ -1,0 +1,134 @@
+service: sismo-commitment-signer
+useDotenv: true
+frameworkVersion: "3"
+
+custom:
+  profiles:
+    dev: sandbox
+    staging: staging-common
+    # prod: prod-commitment-signer
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  profile: ${self:custom.profiles.${sls:stage}}
+  region: eu-west-1
+  memorySize: 2048
+  timeout: 20 # optional, in seconds, default is 6
+  environment:
+    COMMITMENT_STORE_TABLE_SUFFIX: ${sls:stage}CommitmentSignerStore
+    NODE_ENV: ${sls:stage}
+  httpApi:
+    cors: true
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - secretsmanager:GetSecretValue
+          Resource:
+            - "Fn::Join":
+                - ":"
+                - - "arn:aws:secretsmanager"
+                  - Ref: "AWS::Region"
+                  - Ref: "AWS::AccountId"
+                  - "secret:commitment-signer/*"
+        - Effect: Allow
+          Action:
+            - "dynamodb:Get*"
+            - "dynamodb:PutItem"
+            - "dynamodb:Update*"
+          Resource:
+            - "Fn::Join":
+                - ":"
+                - - "arn:aws:dynamodb"
+                  - Ref: "AWS::Region"
+                  - Ref: "AWS::AccountId"
+                  - "table/${sls:stage}CommitmentSignerStore"
+
+functions:
+  commit:
+    handler: src/handler.commit
+    provisionedConcurrency: 2
+    disableLogs: true
+    events:
+      - httpApi:
+          path: /commit
+          method: POST
+
+  retrieveSignedCommitment:
+    handler: src/handler.retrieveSignedCommitment
+    provisionedConcurrency: 2
+    disableLogs: true
+    events:
+      - httpApi:
+          path: /retrieve-signed-commitment
+          method: POST
+
+  getPublicKey:
+    handler: src/handler.getPublicKey
+    disableLogs: true
+    events:
+      - httpApi:
+          path: /get-public-key
+          method: GET
+
+  generateSecret:
+    handler: src/handler.generateSecret
+    role: generateSecretRole
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+resources:
+  Resources:
+    DB:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${sls:stage}CommitmentSignerStore
+        AttributeDefinitions: ${file(./src/commitment-store/schema.db.json):AttributeDefinitions}
+        KeySchema: ${file(./src/commitment-store/schema.db.json):KeySchema}
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    generateSecretRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /sls/commitment-signer/
+        RoleName: CommitmentSignerGenerateSecret-${sls:stage}
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: DescribeAndCreateSecret
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:DescribeSecret
+                    - secretsmanager:CreateSecret
+                  Resource: "*"
+          - PolicyName: PutLogs
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - "Fn::Join":
+                        - ":"
+                        - - "arn:aws:logs"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "log-group:/aws/lambda/*:*:*"
