@@ -1,0 +1,14 @@
+{
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "Key",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "Key",
+      "KeyType": "HASH"
+    }
+  ]
+}
