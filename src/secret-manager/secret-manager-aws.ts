@@ -2,7 +2,7 @@ import { SecretsManager } from "aws-sdk";
 import { SecretManager } from "./secret-manager";
 
 export default class SecretManagerAWS extends SecretManager {
-  private _secretName = "commitment-signer/secret";
+  private _secretName = `commitment-signer/${process.env.NODE_ENV}/secret`;
   private _secretManager = new SecretsManager();
 
   protected async _exists(): Promise<boolean> {
