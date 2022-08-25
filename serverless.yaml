@@ -113,7 +113,13 @@ resources:
                   Action:
                     - secretsmanager:DescribeSecret
                     - secretsmanager:CreateSecret
-                  Resource: "*"
+                  Resource:
+                    - "Fn::Join":
+                        - ":"
+                        - - "arn:aws:secretsmanager"
+                          - Ref: "AWS::Region"
+                          - Ref: "AWS::AccountId"
+                          - "secret:commitment-signer/${sls:stage}/*"
           - PolicyName: PutLogs
             PolicyDocument:
               Version: "2012-10-17"
