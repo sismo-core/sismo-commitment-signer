@@ -30,7 +30,7 @@ Example: An offchain service could verify phone numbers. We don't want to associ
 The Commitment Signer has two steps:
 
 - 1. the user makes an offchain `commitment` by calling the `/commit` route. The service sends back to the user an `issuerIdentifier` that allows the user to interact directly with the issuer.
-- 2. the user retrieves an EdDSA signature of the `commitment`, by calling the `/retrieve-signed-commitment` route. This signature is only made if the `issuer` validate the flow made with the `issuerIdentifier` 
+- 2. the user retrieves an EdDSA signature of the `commitment`, by calling the `/retrieve-commitment-receipt` route. This signature is only made if the `issuer` validate the flow made with the `issuerIdentifier`
 
 The signature of the commitment can be used inside a zk-SNARK circuit to verify that the user is the creator of the commitment (commitment = hash(secret), where the secret is only known by the user) and verify that the commitment well pass through the Commitment Signer (verifying the signature against the issuer public key).
 
@@ -89,7 +89,7 @@ EOF
 
 ### Retrieve Signed Commitment
 
-Endpoint: `https://dae6y9y3mc.execute-api.eu-west-1.amazonaws.com/retrieve-signed-commitment`
+Endpoint: `https://dae6y9y3mc.execute-api.eu-west-1.amazonaws.com/retrieve-commitment-receipt`
 
 Method: `POST`
 
@@ -100,12 +100,12 @@ Parameters:
 Response:
 
 - `commitmentMapperPubKey` : The EdDSA public key of the commitment signer. This public key will never change.
-- `signedCommitment` : The Signature(Commitment)
+- `commitmentReceipt` : The Signature(Hash(Commitment,value))
 
 Example:
 
 ```bash
-$ curl -X POST -H 'content-type: application/json' https://dae6y9y3mc.execute-api.eu-west-1.amazonaws.com/retrieve-signed-commitment -d @- <<EOF
+$ curl -X POST -H 'content-type: application/json' https://dae6y9y3mc.execute-api.eu-west-1.amazonaws.com/retrieve-commitment-receipt -d @- <<EOF
 {
     "commitment": "0x1234678900987654321"
 }
@@ -116,7 +116,7 @@ EOF
     "0x0eeeffe58d278552cc06d9ffada205dbfef1da11288345fed10c916fdd8c6f13",
     "0x2d18d49c9e8045d34b6e8ae4262b1dbf73bc47a7fbe4b6748eafa6b5b28d0fa3"
   ],
-  "signedCommitment": [
+  "commitmentReceipt": [
     "0x0253fb8b55f777d7b3865c1dfda9ff16b379063b8799d8a201508158863a5b3d",
     "0x0f44414019473279db9471da96ba5b2546f280f1679034113008d98c85638aee",
     "0x05d0b7d6d2e4439cf5362b41af58bf9ea71b1f9051b2388a2e25bef6a2f353bf"

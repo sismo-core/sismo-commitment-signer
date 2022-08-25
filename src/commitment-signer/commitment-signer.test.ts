@@ -3,7 +3,7 @@ import { buildPoseidon } from "@sismo-core/crypto";
 import {
   CommitmentSigner,
   IssuerIdentifier,
-  SignedCommitmentResponse,
+  CommitmentReceiptResponse,
 } from "./commitment-signer";
 import LocalSecretManager from "../secret-manager/secret-manager-local";
 
@@ -22,6 +22,12 @@ export class CommitmentSignerTest extends CommitmentSigner {
     issuerIdentifier: IssuerIdentifier
   ): Promise<boolean> {
     return Promise.resolve(this.validIdentifier[issuerIdentifier]);
+  }
+
+  protected async _getIssuerIdentifierAssociatedValue(
+    issuerIdentifier: IssuerIdentifier
+  ): Promise<string> {
+    return Promise.resolve("0x1");
   }
 }
 
@@ -54,11 +60,11 @@ test("add a commitment and get an issuerIdentifier in exchange", async () => {
   expect(issuerIdentifier).toEqual("123-456-789");
 });
 
-test("should not retrieve a signed commitment if it is not validated by the issuer", async () => {
+test("should not retrieve a commitment receipt if it is not validated by the issuer", async () => {
   const commitment = "123";
 
   await expect(
-    commitmentSignerTest.retrieveSignedCommitment(commitment)
+    commitmentSignerTest.retrieveCommitmentReceipt(commitment)
   ).rejects.toEqual(Error("IssuerIdentifier was not validated"));
 });
 
@@ -66,18 +72,18 @@ test("should validate the issuerIdentifier corresponding to the test commitment"
   commitmentSignerTest.validate("123-456-789");
 });
 
-test("send retrieve a signed commitment", async () => {
+test("send retrieve a commitment receipt", async () => {
   const commitment = "123";
 
-  const signedCommitment: SignedCommitmentResponse =
-    await commitmentSignerTest.retrieveSignedCommitment(commitment);
-  expect(signedCommitment.commitmentSignerPubKey).toEqual([
+  const commitmentReceipt: CommitmentReceiptResponse =
+    await commitmentSignerTest.retrieveCommitmentReceipt(commitment);
+  expect(commitmentReceipt.commitmentSignerPubKey).toEqual([
     "0x0739d67c4d0c90837361c2fe595d11dfecc2847dc41e1ef0da8201c0b16aa09c",
     "0x2206d2a327e39f643e508f5a08e922990cceba9610c15f9a94ef30d6dd54940f",
   ]);
-  expect(signedCommitment.signedCommitment).toEqual([
-    "0x0b7aab7f755cb88c494dbbb2473b4dfc2148e0e2c752ea46050dfa3a465af097",
-    "0x2521df2f3816fceda803147578f69c4806bb879811109cc7587aad33c0b10f68",
-    "0x018a7fa524f8120ac4e8bbc634e5e0467cc0720d09f600e7d8a8451d3ff94b50",
+  expect(commitmentReceipt.commitmentReceipt).toEqual([
+    "0xb8f112e19f16adb9e6fb6eebbd853b13976200e6a2dca22047b1260577b28c",
+    "0x1b46832e4b477a98ea085d7fd9313f9df8c5147ad5e6ccf2df5a3543016cbbb8",
+    "0xdd6834237cf1b07ddaea8957065c3ff941839c311047e5a72fe3329ad17ccf",
   ]);
 });

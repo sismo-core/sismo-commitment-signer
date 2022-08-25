@@ -10,4 +10,10 @@ export class CommitmentSignerExample extends CommitmentSigner {
   ): Promise<boolean> {
     return Promise.resolve(true);
   }
+
+  protected async _getIssuerIdentifierAssociatedValue(
+    issuerIdentifier: IssuerIdentifier
+  ): Promise<string> {
+    return Promise.resolve("0x1");
+  }
 }

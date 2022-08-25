@@ -40,14 +40,14 @@ export const commit: Handler = async (
   }
 };
 
-type retrieveSignedCommitmentInputData = {
+type retrieveCommitmentReceiptInputData = {
   commitment: string;
 };
-export const retrieveSignedCommitment: Handler = async (
+export const retrieveCommitmentReceipt: Handler = async (
   event: APIGatewayEvent,
   _context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const requestData: retrieveSignedCommitmentInputData = JSON.parse(
+  const requestData: retrieveCommitmentReceiptInputData = JSON.parse(
     event.body!
   );
   const commitment = requestData.commitment;
@@ -55,12 +55,12 @@ export const retrieveSignedCommitment: Handler = async (
   const commitmentSigner = await commitmentSignerFactory();
 
   try {
-    const signedCommitment = await commitmentSigner.retrieveSignedCommitment(
+    const commitmentReceipt = await commitmentSigner.retrieveCommitmentReceipt(
       commitment
     );
     return {
       statusCode: 200,
-      body: JSON.stringify(signedCommitment),
+      body: JSON.stringify(commitmentReceipt),
     };
   } catch (e: any) {
     return {

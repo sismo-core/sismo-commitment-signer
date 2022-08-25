@@ -55,12 +55,12 @@ functions:
           path: /commit
           method: POST
 
-  retrieveSignedCommitment:
-    handler: src/handler.retrieveSignedCommitment
+  retrieveCommitmentReceipt:
+    handler: src/handler.retrieveCommitmentReceipt
     disableLogs: true
     events:
       - httpApi:
-          path: /retrieve-signed-commitment
+          path: /retrieve-commitment-receipt
           method: POST
 
   getPublicKey:

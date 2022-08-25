@@ -1,13 +1,13 @@
 import { SecretManager } from "../secret-manager";
 import { CommitmentStore } from "../commitment-store";
-import { EddsaAccount } from "@sismo-core/crypto";
+import { buildPoseidon, EddsaAccount } from "@sismo-core/crypto";
 import { BigNumber } from "ethers";
 
 export type CommitmentSignerPublicKey = string[];
 
-export type SignedCommitmentResponse = {
+export type CommitmentReceiptResponse = {
   commitmentSignerPubKey: string[];
-  signedCommitment: string[];
+  commitmentReceipt: string[];
 };
 
 export type Commitment = string;
@@ -26,6 +26,9 @@ export abstract class CommitmentSigner {
   protected abstract _isIssuerIdentifierValidated(
     issuerIdentifier: IssuerIdentifier
   ): Promise<boolean>;
+  protected abstract _getIssuerIdentifierAssociatedValue(
+    issuerIdentifier: IssuerIdentifier
+  ): Promise<string>;
 
   async commit(commitment: Commitment): Promise<IssuerIdentifier> {
     const issuerIdentifier = await this._createIssuerIdentifier();
@@ -33,9 +36,9 @@ export abstract class CommitmentSigner {
     return issuerIdentifier;
   }
 
-  async retrieveSignedCommitment(
+  async retrieveCommitmentReceipt(
     commitment: Commitment
-  ): Promise<SignedCommitmentResponse> {
+  ): Promise<CommitmentReceiptResponse> {
     const issuerIdentifier = await this._getIdentifierForCommitment(commitment);
     const isIssuerIdentifierValidated = await this._isIssuerIdentifierValidated(
       issuerIdentifier
@@ -44,12 +47,19 @@ export abstract class CommitmentSigner {
       throw new Error("IssuerIdentifier was not validated");
     }
 
-    const signedCommitment = (await this._getEddsaAccount()).sign(
-      BigNumber.from(commitment)
+    const poseidon = await buildPoseidon();
+
+    const getIssuerIdentifierAssociatedValue =
+      await this._getIssuerIdentifierAssociatedValue(issuerIdentifier);
+    const commitmentReceipt = (await this._getEddsaAccount()).sign(
+      poseidon([
+        BigNumber.from(commitment),
+        BigNumber.from(getIssuerIdentifierAssociatedValue),
+      ])
     );
     return {
       commitmentSignerPubKey: await this.getPubKey(),
-      signedCommitment: signedCommitment.map((signature: BigNumber) =>
+      commitmentReceipt: commitmentReceipt.map((signature: BigNumber) =>
         signature.toHexString()
       ),
     };
