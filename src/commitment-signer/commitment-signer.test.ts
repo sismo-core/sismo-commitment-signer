@@ -1,11 +1,12 @@
 import MemoryCommitmentStore from "../commitment-store/commitment-store-memory";
-import { buildPoseidon } from "@sismo-core/crypto";
+import { buildPoseidon, EddsaAccount } from "@sismo-core/crypto";
 import {
   CommitmentSigner,
   IssuerIdentifier,
   CommitmentReceiptResponse,
 } from "./commitment-signer";
 import LocalSecretManager from "../secret-manager/secret-manager-local";
+import { BigNumber } from "ethers";
 
 export class CommitmentSignerTest extends CommitmentSigner {
   private validIdentifier: { [identifier: string]: boolean } = {};
@@ -28,6 +29,12 @@ export class CommitmentSignerTest extends CommitmentSigner {
     issuerIdentifier: IssuerIdentifier
   ): Promise<string> {
     return Promise.resolve("0x1");
+  }
+
+  protected async _getIssuerIdentifierGroupId(
+    issuerIdentifier: string
+  ): Promise<string> {
+    return Promise.resolve("0x2");
   }
 }
 
@@ -75,15 +82,26 @@ test("should validate the issuerIdentifier corresponding to the test commitment"
 test("send retrieve a commitment receipt", async () => {
   const commitment = "123";
 
+  const secret = await localSecretManager.get();
+  const eddsaAccount = await EddsaAccount.generateFromSeed(
+    BigNumber.from(secret.seed)
+  );
+  const expectedCommitmentReceipt = await eddsaAccount
+    .sign(
+      poseidon([
+        BigNumber.from(commitment),
+        BigNumber.from("0x1"), // value
+        BigNumber.from("0x2"), // groupId
+      ])
+    )
+    .map((x) => x.toHexString());
+
   const commitmentReceipt: CommitmentReceiptResponse =
     await commitmentSignerTest.retrieveCommitmentReceipt(commitment);
-  expect(commitmentReceipt.commitmentSignerPubKey).toEqual([
-    "0x0739d67c4d0c90837361c2fe595d11dfecc2847dc41e1ef0da8201c0b16aa09c",
-    "0x2206d2a327e39f643e508f5a08e922990cceba9610c15f9a94ef30d6dd54940f",
-  ]);
-  expect(commitmentReceipt.commitmentReceipt).toEqual([
-    "0xb8f112e19f16adb9e6fb6eebbd853b13976200e6a2dca22047b1260577b28c",
-    "0x1b46832e4b477a98ea085d7fd9313f9df8c5147ad5e6ccf2df5a3543016cbbb8",
-    "0xdd6834237cf1b07ddaea8957065c3ff941839c311047e5a72fe3329ad17ccf",
-  ]);
+  expect(commitmentReceipt.commitmentSignerPubKey).toEqual(
+    eddsaAccount.getPubKey().map((coord) => coord.toHexString())
+  );
+  expect(commitmentReceipt.commitmentReceipt).toEqual(
+    expectedCommitmentReceipt
+  );
 });

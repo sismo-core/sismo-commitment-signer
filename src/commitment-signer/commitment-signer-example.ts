@@ -16,4 +16,10 @@ export class CommitmentSignerExample extends CommitmentSigner {
   ): Promise<string> {
     return Promise.resolve("0x1");
   }
+
+  protected async _getIssuerIdentifierGroupId(
+    issuerIdentifier: string
+  ): Promise<string> {
+    return Promise.resolve("0x1");
+  }
 }

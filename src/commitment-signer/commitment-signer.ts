@@ -1,6 +1,6 @@
 import { SecretManager } from "../secret-manager";
 import { CommitmentStore } from "../commitment-store";
-import { buildPoseidon, EddsaAccount } from "@sismo-core/crypto";
+import { buildPoseidon, EddsaAccount, SNARK_FIELD } from "@sismo-core/crypto";
 import { BigNumber } from "ethers";
 
 export type CommitmentSignerPublicKey = string[];
@@ -29,6 +29,9 @@ export abstract class CommitmentSigner {
   protected abstract _getIssuerIdentifierAssociatedValue(
     issuerIdentifier: IssuerIdentifier
   ): Promise<string>;
+  protected abstract _getIssuerIdentifierGroupId(
+    issuerIdentifier: IssuerIdentifier
+  ): Promise<string>;
 
   async commit(commitment: Commitment): Promise<IssuerIdentifier> {
     const issuerIdentifier = await this._createIssuerIdentifier();
@@ -49,12 +52,18 @@ export abstract class CommitmentSigner {
 
     const poseidon = await buildPoseidon();
 
-    const getIssuerIdentifierAssociatedValue =
+    const issuerIdentifierAssociatedValue =
       await this._getIssuerIdentifierAssociatedValue(issuerIdentifier);
+
+    const issuerIdentifierGroupId = await this._getIssuerIdentifierGroupId(
+      issuerIdentifier
+    );
+
     const commitmentReceipt = (await this._getEddsaAccount()).sign(
       poseidon([
         BigNumber.from(commitment),
-        BigNumber.from(getIssuerIdentifierAssociatedValue),
+        BigNumber.from(issuerIdentifierAssociatedValue),
+        BigNumber.from(issuerIdentifierGroupId).mod(SNARK_FIELD),
       ])
     );
     return {

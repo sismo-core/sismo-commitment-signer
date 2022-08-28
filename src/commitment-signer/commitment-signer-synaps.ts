@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { CommitmentSigner, IssuerIdentifier } from "./commitment-signer";
 import {
   synapsStartSession,
@@ -19,5 +20,17 @@ export class CommitmentSignerSynaps extends CommitmentSigner {
     issuerIdentifier: IssuerIdentifier
   ): Promise<string> {
     return Promise.resolve("0x1");
+  }
+
+  protected async _getIssuerIdentifierGroupId(
+    issuerIdentifier: string
+  ): Promise<string> {
+    return ethers.utils.keccak256(
+      ethers.utils.defaultAbiCoder.encode(
+        ["uint128", "bool"],
+        // internalCollectionId, isScore
+        [0, false]
+      )
+    );
   }
 }
