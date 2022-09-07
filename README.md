@@ -25,20 +25,20 @@
 
 The Commitment Signer mechanism is part of the Sismo Pythia proving scheme. It allows an offchain service (issuer) to send data on chain without making a link between its internal offchain data (issuer identifier) and the ethereum account where the data is effectively sent on chain.
 
-Example: An offchain service could verify phone numbers. We don't want to associate the phone number to an ethereum account. We could then create a ZK Badge "phone verified" where no-one could know the phone number used for this ZK Badge, even the issuer.
+Example: An offchain service could verify phone numbers. We don't want to associate the phone number to an ethereum account. We could then create a ZK Badge "phone verified" where no one could know the phone number used for this ZK Badge, even the issuer.
 
 The Commitment Signer has two steps:
 
 - 1. the user makes an offchain `commitment` by calling the `/commit` route. The service sends back to the user an `issuerIdentifier` that allows the user to interact directly with the issuer.
-- 2. the user retrieves an EdDSA signature of the `commitment`, by calling the `/retrieve-commitment-receipt` route. This signature is only made if the `issuer` validate the flow made with the `issuerIdentifier`
+- 2. the user retrieves an EdDSA signature of the `commitment`, by calling the `/retrieve-commitment-receipt` route. This signature is only made if the `issuer` validates the flow made with the `issuerIdentifier`
 
-The signature of the commitment can be used inside a zk-SNARK circuit to verify that the user is the creator of the commitment (commitment = hash(secret), where the secret is only known by the user) and verify that the commitment well pass through the Commitment Signer (verifying the signature against the issuer public key).
+The signature of the commitment can be used inside a zk-SNARK circuit to verify that the user is the creator of the commitment (commitment = hash(secret), where the secret is only known by the user) and verify that the commitment will pass through the Commitment Signer (verifying the signature against the issuer public key).
 
 ## Commitment Signer Implementation
 
 In order to add your own issuer logic to the commitment signer, you need to implement the abstract class `CommitmentSigner` in the `src/commitment-signer/commitment-signer.ts` and instantiate the object in the factory `src/commitment-signer/factory.ts`.
 
-You can find a very basic implementation example that always validate commitments:
+You can find a very basic implementation example that always validates commitments:
 
 ```typescript
 export class CommitmentSignerExample extends CommitmentSigner {
@@ -67,7 +67,7 @@ Method: `POST`
 
 Parameters:
 
-- `commitment` : The commitment choosen by the user
+- `commitment` : The commitment chosen by the user
 
 Response:
 
@@ -95,7 +95,7 @@ Method: `POST`
 
 Parameters:
 
-- `commitment` : The commitment choosen by the user
+- `commitment` : The commitment chosen by the user
 
 Response:
 
